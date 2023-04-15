@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "imap": "^0.8.19",
+    "node-ts": "^5.1.2"
+  }
+}
