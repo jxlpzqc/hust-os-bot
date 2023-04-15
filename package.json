@@ -9,6 +9,6 @@
   },
   "scripts": {
     "start": "ts-node main.ts",
-    "build": "tsc main.ts"
+    "build": "tsc"
   }
 }

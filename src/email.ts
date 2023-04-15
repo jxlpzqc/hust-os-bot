@@ -1,6 +1,5 @@
 import Imap from 'imap';
 import { readFile } from 'fs/promises'
-import { inspect } from 'util';
 
 const log = (msg: string) => {
   const time = new Date().toTimeString();
@@ -13,6 +12,8 @@ const logError = (msg: string) => {
 }
 
 
+const CC_EMAIL = process.env.CC_EMAIL || "hust-os-kernel-patches@googlegroups.com";
+
 type MessageItem = {
   seqno: number;
   headers: {
@@ -20,7 +21,8 @@ type MessageItem = {
   };
 }
 
-function getAllEmails(username: string, password: string): Promise<MessageItem> {
+function getAllEmails(username: string, password: string): Promise<MessageItem[]> {
+  const list: MessageItem[] = [];
   return new Promise((resolve, reject) => {
     const imap = new Imap({
       user: username,
@@ -44,7 +46,7 @@ function getAllEmails(username: string, password: string): Promise<MessageItem> 
                 buffer += chunk.toString('utf8');
               });
               stream.on('end', function() {
-                resolve({
+                list.push({
                   seqno,
                   headers: Imap.parseHeader(buffer)
                 });
@@ -58,6 +60,7 @@ function getAllEmails(username: string, password: string): Promise<MessageItem> 
           f.once('end', function() {
             log(`Done fetching all messages! ${total} messages fetched.`);
             imap.end();
+            resolve(list);
           });
         };
       });
@@ -100,3 +103,38 @@ function getThreadInfo(msgs: MessageItem[]): {
   };
 }
 
+function filterInterstingEmails(msgs: MessageItem[], reviewsMails: string[]): MessageItem[] {
+  const ret: MessageItem[] = [];
+  const { parent, isLast } = getThreadInfo(msgs);
+  const getRoot = (ind: number) => {
+    let root = ind;
+    while (parent[root] != -1) root = parent[root];
+    return msgs[root];
+  };
+  for (let i = 0; i < msgs.length; i++) {
+    const msg = msgs[i];
+    if (!isLast[i]) continue;
+    const root = getRoot(i);
+
+    const isInternal = root.headers["to"][0] == CC_EMAIL ||
+      (root.headers["cc"].length == 1
+        && root.headers["cc"][0] == CC_EMAIL);
+
+    const isUnreply = reviewsMails.includes(msg.headers["from"][0]);
+
+    if (isInternal && isUnreply) {
+      ret.push(msg);
+    }
+  }
+  return ret;
+}
+
+/** Get Intersted Emails, i.e. from os kernel groups and
+  * not replied by internal reviewer.
+  */
+export async function getInterstedEmails(): Promise<MessageItem[]> {
+  const configString = await readFile(".secrets.json", "utf8");
+  const { username, password, reviewsMails } = JSON.parse(configString);
+  const allMessages = await getAllEmails(username, password);
+  return filterInterstingEmails(allMessages, reviewsMails);
+}
