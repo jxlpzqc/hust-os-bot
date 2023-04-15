@@ -1,6 +1,14 @@
 {
   "dependencies": {
-    "imap": "^0.8.19",
-    "node-ts": "^5.1.2"
+    "imap": "^0.8.19"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.1",
+    "typescript": "^5.0.4",
+    "@types/imap": "^0.8.35"
+  },
+  "scripts": {
+    "start": "ts-node main.ts",
+    "build": "tsc main.ts"
   }
 }

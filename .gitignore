@@ -145,3 +145,6 @@ dist
 
 # Yarn
 yarn.lock
+
+# secrets
+.secrets.json
