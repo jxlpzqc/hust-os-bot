@@ -1,20 +1,10 @@
 import Imap from 'imap';
 import { readFile } from 'fs/promises'
-
-const log = (msg: string) => {
-  const time = new Date().toTimeString();
-  console.log("[LOG][%s] %s", time, msg);
-}
-
-const logError = (msg: string) => {
-  const time = new Date().toTimeString();
-  console.error("[ERR][%s] %s", time, msg);
-}
-
+import { log, logError } from './log'
 
 const CC_EMAIL = process.env.CC_EMAIL || "hust-os-kernel-patches@googlegroups.com";
 
-type MessageItem = {
+export type MessageItem = {
   seqno: number;
   headers: {
     [index: string]: string[]
