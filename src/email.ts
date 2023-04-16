@@ -1,6 +1,7 @@
 import Imap from 'imap';
 import { readFile } from 'fs/promises'
 import { log, logError } from './log'
+import { CONFIG_FILE } from 'index';
 
 const CC_EMAIL = process.env.CC_EMAIL || "hust-os-kernel-patches@googlegroups.com";
 
@@ -123,7 +124,7 @@ function filterInterstingEmails(msgs: MessageItem[], reviewsMails: string[]): Me
   * not replied by internal reviewer.
   */
 export async function getInterstedEmails(): Promise<MessageItem[]> {
-  const configString = await readFile(".secrets.json", "utf8");
+  const configString = await readFile(CONFIG_FILE, "utf8");
   const { username, password, reviewsMails } = JSON.parse(configString);
   const allMessages = await getAllEmails(username, password);
   return filterInterstingEmails(allMessages, reviewsMails);

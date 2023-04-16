@@ -1,7 +1,5 @@
 # Hust OS Contribution Mail List Bot
 
-# Usage
-
 ## Build
 
 ### Prerequisite
@@ -27,4 +25,10 @@ npm start
 npm run build
 ```
 
+## Usage
 
+### Environments
+
+- SECRETS_FILE: file to secrets configuration, default `.secrets.json` 
+- CRON_EXP: specify when to execute the schedule, default is every 3 minutes.
+- CC_EMAIL: specify email to filter, default is HUST google groups email address.

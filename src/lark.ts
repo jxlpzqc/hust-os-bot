@@ -2,12 +2,13 @@ import { AppType, Client, Domain } from '@larksuiteoapi/node-sdk'
 import { readFile } from 'fs/promises'
 import { MessageItem } from './email'
 import { logError } from 'log';
+import { CONFIG_FILE } from 'index';
 
 let client: Client;
 
 async function getClient() {
   if (client) return client;
-  const secrets = JSON.parse(await readFile(".secrets.json", "utf8"));
+  const secrets = JSON.parse(await readFile(CONFIG_FILE, "utf8"));
 
   client = new Client({
     appId: secrets.appId,
