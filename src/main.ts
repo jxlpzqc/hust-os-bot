@@ -17,9 +17,9 @@ app.get('/', async (req, res) => {
   const tasks = await getTasks();
   const items: TaskInView[] = tasks.map(u => ({
     summary: u.summary,
-    appLink: ``
+    appLink: `https://applink.feishu.cn/client/todo/detail?guid=${u.id}`
   }));
   return res.render("index.ejs", {
-    items: tasks
+    items
   })
 })
