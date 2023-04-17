@@ -1,26 +1,6 @@
-import { AppType, Client, Domain } from '@larksuiteoapi/node-sdk'
-import { readFile } from 'fs/promises'
 import { MessageItem } from './email'
 import { logError } from '../log';
-import { CONFIG_FILE } from '.';
-
-let client: Client;
-
-async function getClient() {
-  if (client) return client;
-  const secrets = JSON.parse(await readFile(CONFIG_FILE, "utf8"));
-
-  client = new Client({
-    appId: secrets.appId,
-    appSecret: secrets.appSecret,
-    appType: AppType.SelfBuild,
-    domain: Domain.Feishu,
-  });
-  return client;
-}
-
-type InnerPromise<T> = T extends Promise<infer R> ? R : any;
-type Task = InnerPromise<ReturnType<typeof getTasks>>[number];
+import { createTask as apiCreateTask, completeTask, getTasks, type Task } from '../api'
 
 type Extra = {
   type: 'os-mail',
@@ -50,68 +30,16 @@ function mid(t: Task): string | false {
   return false;
 }
 
-export async function getAuth(code: string): Promise<string | false> {
-  const client = await getClient();
-  const ret = await client.authen.accessToken.create({
-    data: {
-      code,
-      grant_type: 'authorization_code'
-    }
-  });
-
-  if (ret.code) return false;
-  return ret.data?.open_id || false;
-}
 
 async function createTask(msg: MessageItem) {
-  const client = await getClient();
-  const ret = await client.task.task.create({
-    data: {
-      origin: {
-        platform_i18n_name: '{"zh_cn": "内核内部审核工作组", "en_us": "Kernel internal review work group"}'
-      },
-      extra: genExtra(msg),
-      summary: `处理邮件 ${msg.headers["subject"][0]}`
+  return await apiCreateTask({
+    origin: {
+      platform_i18n_name: '{"zh_cn": "内核内部审核工作组", "en_us": "Kernel internal review work group"}'
     },
-  })
+    extra: genExtra(msg),
+    summary: `处理邮件 ${msg.headers["subject"][0]}`
+  });
 
-  if (ret.code != 0) throw new Error(ret.msg);
-}
-
-async function finishTask(t: Task) {
-  if (!t.id) return;
-  const client = await getClient();
-  const ret = await client.task.task.complete({
-    path: {
-      task_id: t.id
-    }
-  })
-  if (ret.code != 0) throw new Error(ret.msg);
-}
-
-export async function getTasks() {
-  const client = await getClient();
-  let hasMore = true;
-
-  const items = [];
-  let page_token;
-  while (hasMore) {
-    const res = await client.task.task.list({
-      params: {
-        page_size: 100,
-        page_token
-      }
-    });
-
-    if (res.code != 0) throw new Error(res.msg);
-    if (res.data?.items) {
-      items.push(...res.data.items);
-    }
-    hasMore = res.data?.has_more || false;
-    page_token = res.data?.page_token;
-  }
-
-  return items;
 }
 
 export async function sync(msgs: MessageItem[]) {
@@ -123,7 +51,7 @@ export async function sync(msgs: MessageItem[]) {
       if (!messageid) continue;
       const msgIndex = msgs.findIndex(u => u.headers["message-id"][0] == messageid);
       if (msgIndex == -1) {
-        finishTask(task);
+        completeTask(task);
       }
       else {
         isInTask[msgIndex] = true;

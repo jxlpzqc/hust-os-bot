@@ -13,11 +13,10 @@
     "@types/imap": "^0.8.35",
     "@types/morgan": "^1.9.4",
     "@types/node-schedule": "^2.1.0",
-    "ts-node": "^10.9.1",
     "typescript": "^5.0.4"
   },
   "scripts": {
-    "start": "ts-node src/main.ts",
+    "start": "npm build && node ./dist/main.js",
     "build": "tsc"
   }
 }

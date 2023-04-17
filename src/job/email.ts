@@ -1,8 +1,6 @@
 import Imap from 'imap';
-import { readFile } from 'fs/promises'
-import { log, logError } from '../log'
-import { CONFIG_FILE } from '.';
-import { inspect } from 'util';
+import { log, logError } from '@/log'
+import { getSecrets } from '@/config';
 
 const CC_EMAIL = process.env.CC_EMAIL || "hust-os-kernel-patches@googlegroups.com";
 
@@ -129,12 +127,12 @@ function filterInterstingEmails(msgs: MessageItem[], reviewerEmails: string[]): 
 /** Get Intersted Emails, i.e. from os kernel groups and
   * not replied by internal reviewer.
   */
-export async function getInterstedEmails(): Promise<MessageItem[]> {
-  const configString = await readFile(CONFIG_FILE, "utf8");
-  const { username, password, reviewerEmails } = JSON.parse(configString);
+export async function getInterestingEmails(): Promise<MessageItem[]> {
+  const { username, password, reviewerEmails } = await getSecrets();
   const allMessages = await getAllEmails(username, password);
   const interestingEmails = filterInterstingEmails(allMessages, reviewerEmails);
-  log(inspect(interestingEmails, false, null, process.stdout.isTTY));
+  // log(inspect(interestingEmails, false, null, process.stdout.isTTY));
+  log("%d messages are found intersting.", interestingEmails.length);
   return interestingEmails;
 }
 
