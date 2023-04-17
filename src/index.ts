@@ -2,7 +2,7 @@ import { scheduleJob } from "node-schedule";
 import { getInterstedEmails } from "./email";
 import { sync } from './lark'
 import { existsSync } from 'fs'
-import { logError } from "log";
+import { log, logError } from "./log";
 
 export const CONFIG_FILE = process.env.SECRETS_FILE || ".secrets.json";
 export const CRON_EXP = process.env.CRON_EXP || "*/3 * * * *";
@@ -20,5 +20,5 @@ function appStart() {
   });
 }
 
-
 appStart();
+

@@ -1,8 +1,8 @@
 import { AppType, Client, Domain } from '@larksuiteoapi/node-sdk'
 import { readFile } from 'fs/promises'
 import { MessageItem } from './email'
-import { logError } from 'log';
-import { CONFIG_FILE } from 'index';
+import { logError } from './log';
+import { CONFIG_FILE } from '.';
 
 let client: Client;
 

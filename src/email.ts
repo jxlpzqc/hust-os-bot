@@ -1,7 +1,8 @@
 import Imap from 'imap';
 import { readFile } from 'fs/promises'
 import { log, logError } from './log'
-import { CONFIG_FILE } from 'index';
+import { CONFIG_FILE } from '.';
+import { inspect } from 'util';
 
 const CC_EMAIL = process.env.CC_EMAIL || "hust-os-kernel-patches@googlegroups.com";
 
@@ -94,12 +95,17 @@ function getThreadInfo(msgs: MessageItem[]): {
   };
 }
 
-function filterInterstingEmails(msgs: MessageItem[], reviewsMails: string[]): MessageItem[] {
+function filterInterstingEmails(msgs: MessageItem[], reviewerEmails: string[]): MessageItem[] {
   const ret: MessageItem[] = [];
   const { parent, isLast } = getThreadInfo(msgs);
   const getRoot = (ind: number) => {
+    const MAX_STACK = 200;
     let root = ind;
-    while (parent[root] != -1) root = parent[root];
+    let i = 0;
+    while (parent[root] != -1 && i < MAX_STACK) {
+      root = parent[root];
+      ++i;
+    }
     return msgs[root];
   };
   for (let i = 0; i < msgs.length; i++) {
@@ -108,10 +114,10 @@ function filterInterstingEmails(msgs: MessageItem[], reviewsMails: string[]): Me
     const root = getRoot(i);
 
     const isInternal = root.headers["to"][0] == CC_EMAIL ||
-      (root.headers["cc"].length == 1
+      (root.headers["cc"] && root.headers["cc"].length == 2
         && root.headers["cc"][0] == CC_EMAIL);
 
-    const isUnreply = reviewsMails.includes(msg.headers["from"][0]);
+    const isUnreply = !reviewerEmails.includes(msg.headers["from"][0]);
 
     if (isInternal && isUnreply) {
       ret.push(msg);
@@ -125,7 +131,10 @@ function filterInterstingEmails(msgs: MessageItem[], reviewsMails: string[]): Me
   */
 export async function getInterstedEmails(): Promise<MessageItem[]> {
   const configString = await readFile(CONFIG_FILE, "utf8");
-  const { username, password, reviewsMails } = JSON.parse(configString);
+  const { username, password, reviewerEmails } = JSON.parse(configString);
   const allMessages = await getAllEmails(username, password);
-  return filterInterstingEmails(allMessages, reviewsMails);
+  const interestingEmails = filterInterstingEmails(allMessages, reviewerEmails);
+  log(inspect(interestingEmails, false, null, true));
+  return interestingEmails;
 }
+
