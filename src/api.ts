@@ -70,3 +70,36 @@ export async function createTask(data: CreateTaskArg) {
 
   if (ret.code != 0) throw new Error(ret.msg);
 }
+
+export async function getGroupMember() {
+  const client = await getClient();
+  const { internalGroupName } = await getSecrets();
+  let group;
+  for await (const groups of await client.im.chat.listWithIterator()) {
+    const item = groups?.items?.find(u => u.name == internalGroupName);
+    if (item) {
+      group = item;
+      break;
+    }
+  }
+  if (!group || !group.chat_id) {
+    throw new Error("No such group, you should add bot in the group");
+  }
+  const chat = group.chat_id;
+
+  const ret = [];
+
+  for await (const items of await client.im.chatMembers.getWithIterator({
+    params: {
+      member_id_type: 'open_id'
+    },
+    path: {
+      chat_id: chat
+    }
+  })) {
+    if (!items?.items) throw new Error("Get group member failed.");
+    ret.push(...items?.items);
+  }
+
+  return ret;
+}
