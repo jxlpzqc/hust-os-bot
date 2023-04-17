@@ -71,12 +71,25 @@ export async function createTask(data: CreateTaskArg) {
   if (ret.code != 0) throw new Error(ret.msg);
 }
 
-export async function getGroupMember() {
+export type Member = InnerPromise<ReturnType<typeof getGroupMember>>[number];
+
+let cachedExpireTime: { [index: string]: Date } = {};
+let cachedItem: { [index: string]: never[] } = {}; // use never to ensure Member inference.
+
+export async function getGroupMember(groupName: string = "") {
+  if (!!cachedItem[groupName] && !!cachedExpireTime[groupName] &&
+    new Date() < cachedExpireTime[groupName])
+    return cachedItem[groupName];
+
   const client = await getClient();
-  const { internalGroupName } = await getSecrets();
+  if (!groupName) {
+    const { internalGroupName } = await getSecrets();
+    groupName = internalGroupName;
+  }
+
   let group;
   for await (const groups of await client.im.chat.listWithIterator()) {
-    const item = groups?.items?.find(u => u.name == internalGroupName);
+    const item = groups?.items?.find(u => u.name == groupName);
     if (item) {
       group = item;
       break;
@@ -101,5 +114,30 @@ export async function getGroupMember() {
     ret.push(...items?.items);
   }
 
+  cachedItem[groupName] = <never[]>ret;
+  cachedExpireTime[groupName] = new Date();
+  cachedExpireTime[groupName].setMinutes(cachedExpireTime[groupName].getMinutes() + 3);
   return ret;
+}
+
+export async function updateTaskFollowers(tid: string, addIds: string[], removeIds: string[]) {
+  const client = await getClient();
+  if (addIds.length)
+    await client.task.taskFollower.create({
+      data: {
+        id_list: addIds
+      },
+      path: {
+        task_id: tid
+      }
+    });
+  if (removeIds.length)
+    for (const id of removeIds) {
+      await client.task.taskFollower.delete({
+        path: {
+          task_id: tid,
+          follower_id: id
+        }
+      });
+    }
 }
