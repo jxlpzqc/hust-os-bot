@@ -1,0 +1,44 @@
+<html>
+
+<head>
+  <title>Authenticating...</title>
+</head>
+
+<body>
+  <p>Wait feishu authenticating your identity...</p>
+
+  <script src="https://unpkg.com/vconsole@latest/dist/vconsole.min.js"></script>
+  <script>
+    // VConsole 默认会挂载到 `window.VConsole` 上
+    var vConsole = new window.VConsole();
+  </script>
+
+  <script type="text/javascript" src="https://lf1-cdn-tos.bytegoofy.com/goofy/lark/op/h5-js-sdk-1.5.16.js">
+  </script>
+  <script>
+    const appid = "<%- appId %>";
+
+    // 通过 ready 接口确认环境准备就绪后才能调用 API
+    window.h5sdk.ready(() => {
+      console.log("window.h5sdk.ready");
+      tt.requestAuthCode({
+        appId: appid,
+        success(res) {
+          console.log("getAuthCode succeed");
+          fetch(`/callback?code=${res.code}`).then(response2 => response2.text().then(res2 => {
+            window.location = res2;
+          }
+          )
+          ).catch(function (e) {console.error(e)})
+        },
+        // 获取失败后的回调
+        fail(err) {
+          console.log(`getAuthCode failed, err:`, JSON.stringify(err));
+        }
+      })
+    });
+  </script>
+
+</body>
+
+</html>

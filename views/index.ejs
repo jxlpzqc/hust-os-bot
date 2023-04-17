@@ -1,0 +1,26 @@
+<html>
+
+<head>
+  <title>TODO List</title>
+</head>
+
+<body>
+  <h1>Todo list</h1>
+  <ul class="list">
+    <% items.forEach(u=> { %>
+      <li class='item'>
+        <a class='hyper' href="<%= u.appLink %>">
+          <div>
+            <%= u.summary %>
+          </div>
+        </a>
+      </li>
+    <% }) %>
+  </ul>
+
+  <style>
+
+  </style>
+</body>
+
+</html>

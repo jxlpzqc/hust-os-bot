@@ -1,6 +1,6 @@
 import Imap from 'imap';
 import { readFile } from 'fs/promises'
-import { log, logError } from '@/log'
+import { log, logError } from '../log'
 import { CONFIG_FILE } from '.';
 import { inspect } from 'util';
 

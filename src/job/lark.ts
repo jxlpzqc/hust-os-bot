@@ -1,7 +1,7 @@
 import { AppType, Client, Domain } from '@larksuiteoapi/node-sdk'
 import { readFile } from 'fs/promises'
 import { MessageItem } from './email'
-import { logError } from '@/log';
+import { logError } from '../log';
 import { CONFIG_FILE } from '.';
 
 let client: Client;
@@ -50,6 +50,18 @@ function mid(t: Task): string | false {
   return false;
 }
 
+export async function getAuth(code: string): Promise<string | false> {
+  const client = await getClient();
+  const ret = await client.authen.accessToken.create({
+    data: {
+      code,
+      grant_type: 'authorization_code'
+    }
+  });
+
+  if (ret.code) return false;
+  return ret.data?.open_id || false;
+}
 
 async function createTask(msg: MessageItem) {
   const client = await getClient();
