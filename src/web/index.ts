@@ -3,6 +3,7 @@ import morgan from 'morgan'
 import { createHash } from 'crypto'
 import { getSecrets } from '@/config'
 import { getAuth, getTasks } from '@/api'
+import { log } from '@/log'
 
 const app = express();
 app.set("view engine", "ejs");
@@ -55,5 +56,6 @@ export function start() {
   if (process.env.PORT) {
     port = parseInt(process.env.PORT);
   }
+  log("Web started.");
   app.listen(port, process.env.HOST || "0.0.0.0");
 }

@@ -48,13 +48,10 @@ export async function getTasks() {
   const client = await getClient();
 
   const ret = [];
-  for await (const item of await client.task.task.listWithIterator({
-    params: {
-      page_size: 100,
-    }
-  })) {
-    if (!item || !item.items) throw new Error("get task failed.");
-    ret.push(...item!.items);
+  for await (const item of await client.task.task.listWithIterator()) {
+    if (!item) throw new Error("get task failed.");
+    if (!item.items) return ret;
+    ret.push(...item.items);
   }
 
   return ret;
@@ -120,10 +117,10 @@ export async function getGroupMember(groupName: string = "") {
   return ret;
 }
 
-export async function updateTaskFollowers(tid: string, addIds: string[], removeIds: string[]) {
+export async function updateTaskCollaborator(tid: string, addIds: string[], removeIds: string[]) {
   const client = await getClient();
   if (addIds.length)
-    await client.task.taskFollower.create({
+    await client.task.taskCollaborator.create({
       data: {
         id_list: addIds
       },
@@ -133,10 +130,10 @@ export async function updateTaskFollowers(tid: string, addIds: string[], removeI
     });
   if (removeIds.length)
     for (const id of removeIds) {
-      await client.task.taskFollower.delete({
+      await client.task.taskCollaborator.delete({
         path: {
           task_id: tid,
-          follower_id: id
+          collaborator_id: id
         }
       });
     }

@@ -132,7 +132,7 @@ export async function getInterestingEmails(): Promise<MessageItem[]> {
   const allMessages = await getAllEmails(username, password);
   const interestingEmails = filterInterstingEmails(allMessages, reviewerEmails);
   // log(inspect(interestingEmails, false, null, process.stdout.isTTY));
-  log("%d messages are found intersting.", interestingEmails.length);
+  log(`${interestingEmails.length} messages are found intersting.`);
   return interestingEmails;
 }
 

@@ -1,6 +1,6 @@
 import { MessageItem } from './email'
 import { logError } from '../log';
-import { createTask as apiCreateTask, completeTask, getGroupMember, getTasks, updateTaskFollowers, type Task } from '../api'
+import { createTask as apiCreateTask, completeTask, getGroupMember, getTasks, updateTaskCollaborator, type Task } from '../api'
 
 type Extra = {
   type: 'os-mail',
@@ -36,14 +36,14 @@ async function createTask(msg: MessageItem) {
     },
     extra: genExtra(msg),
     summary: `处理邮件 ${msg.headers["subject"][0]}`,
-    follower_ids: (await getGroupMember()).map(u => u.member_id).filter(u => !!u) as string[]
+    collaborator_ids: (await getGroupMember()).map(u => u.member_id).filter(u => !!u) as string[]
   });
 }
 
-async function ensureFollowerID(tasks: Task[]) {
+async function ensureCollaborators(tasks: Task[]) {
   for (const task of tasks) {
-    if (task.id && task.follower_ids) {
-      const ids_old = task.follower_ids;
+    if (task.id) {
+      const ids_old = task.collaborators?.map(u => u.id).filter(u => !!u) as string[] || [];
       const set_old = new Set(ids_old);
       const ids_new = (await getGroupMember()).map(u => u.member_id) as string[];
       const set_new = new Set(ids_new);
@@ -51,7 +51,7 @@ async function ensureFollowerID(tasks: Task[]) {
       const deletes = ids_old.filter(u => !set_new.has(u));
       const adds = ids_new.filter(u => !set_old.has(u));
 
-      await updateTaskFollowers(task.id, adds, deletes);
+      await updateTaskCollaborator(task.id, adds, deletes);
     }
   }
 
@@ -60,7 +60,7 @@ async function ensureFollowerID(tasks: Task[]) {
 export async function sync(msgs: MessageItem[]) {
   try {
     const tasks = await getTasks();
-    ensureFollowerID(tasks);
+    await ensureCollaborators(tasks);
     const isInTask = new Array<boolean>(msgs.length).fill(false);
     for (const task of tasks) {
       const messageid = mid(task);
