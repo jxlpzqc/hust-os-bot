@@ -1,6 +1,6 @@
 import Imap from 'imap';
 import { readFile } from 'fs/promises'
-import { log, logError } from './log'
+import { log, logError } from '@/log'
 import { CONFIG_FILE } from '.';
 import { inspect } from 'util';
 
@@ -134,7 +134,7 @@ export async function getInterstedEmails(): Promise<MessageItem[]> {
   const { username, password, reviewerEmails } = JSON.parse(configString);
   const allMessages = await getAllEmails(username, password);
   const interestingEmails = filterInterstingEmails(allMessages, reviewerEmails);
-  log(inspect(interestingEmails, false, null, true));
+  log(inspect(interestingEmails, false, null, process.stdout.isTTY));
   return interestingEmails;
 }
 

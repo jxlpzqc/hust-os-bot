@@ -1,0 +1,17 @@
+<html>
+
+<head>
+  <title>TODO List</title>
+</head>
+
+<body>
+  <h1>Todo list</h1>
+  <ul>
+    <% items.forEach(u => { %>
+      <li><a href="<%= u.appLink =%>"><%= u.summary =%></a></li>
+    <% }); %>
+  </ul>
+
+</body>
+
+</html>

@@ -1,7 +1,7 @@
 import { AppType, Client, Domain } from '@larksuiteoapi/node-sdk'
 import { readFile } from 'fs/promises'
 import { MessageItem } from './email'
-import { logError } from './log';
+import { logError } from '@/log';
 import { CONFIG_FILE } from '.';
 
 let client: Client;
@@ -77,7 +77,7 @@ async function finishTask(t: Task) {
   if (ret.code != 0) throw new Error(ret.msg);
 }
 
-async function getTasks() {
+export async function getTasks() {
   const client = await getClient();
   let hasMore = true;
 
