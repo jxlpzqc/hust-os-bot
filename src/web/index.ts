@@ -26,9 +26,8 @@ app.get('/index', async (req, res) => {
   const key = req.query.key;
   if (!oid || !key) return res.send("Invaid parameters");
   if ((await genKey(oid as string)) != key) return res.send("DO NOT try to hack it.");
-  const { internalGroupName } = await getSecrets();
-  const members = await getGroupMember(internalGroupName);
 
+  const members = await getGroupMember();
   if (!members.find(u => u.member_id == oid)) return res.send("No permission.");
 
   const tasks = await getTasks();
@@ -84,6 +83,9 @@ app.get("/complete/:id", async (req, res) => {
   if (!oid || !key) return res.send("Invaid parameters");
   if ((await genKey(oid as string)) != key) return res.send("DO NOT try to hack it.");
 
+  const members = await getGroupMember();
+  if (!members.find(u => u.member_id == oid)) return res.send("No permission.");
+
   const id = req.params["id"];
   if (!id) return res.send("Bad request");
   const status = req.query["y"];
@@ -95,7 +97,6 @@ app.get("/complete/:id", async (req, res) => {
     });
   }
 
-  const members = await getGroupMember();
   const name = members.find(u=>u.member_id == oid)?.name || "N/A";
   
 
