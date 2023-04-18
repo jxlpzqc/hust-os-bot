@@ -1,7 +1,7 @@
 import express from 'express'
 import morgan from 'morgan'
 import { createHash } from 'crypto'
-import { getSecrets } from '@/config'
+import { BASE_URL, getSecrets } from '@/config'
 import { completeTask, getAuth, getGroupMember, getTask, getTasks, uncompleteTask } from '@/api'
 import { log } from '@/log'
 
@@ -73,7 +73,8 @@ app.get('/index', async (req, res) => {
 app.get("/", async (req, res) => {
   const { appId } = await getSecrets();
   return res.render("login.ejs", {
-    appId
+    appId,
+    base: BASE_URL
   })
 })
 
@@ -97,8 +98,8 @@ app.get("/complete/:id", async (req, res) => {
     });
   }
 
-  const name = members.find(u=>u.member_id == oid)?.name || "N/A";
-  
+  const name = members.find(u => u.member_id == oid)?.name || "N/A";
+
 
   if (status == 'y') {
     await completeTask(id, true, name);
@@ -113,6 +114,11 @@ app.get("/complete/:id", async (req, res) => {
 app.get("/callback", async (req, res) => {
   const code = req.query.code;
   let ret = req.query.ret as string;
+  let state = req.query.state;
+  const browser = (state !== undefined);
+  if (browser) {
+    ret = state as string;
+  }
   if (!ret) ret = "/index";
 
   const addUrlParam = async (url: string, openid: string): Promise<string> => {
@@ -127,7 +133,12 @@ app.get("/callback", async (req, res) => {
   const auth = await getAuth(code as string);
   if (!auth) return res.send("Auth fail!");
   const openid = auth;
-  return res.send(await addUrlParam(ret, openid));
+
+  const rett = await addUrlParam(ret, openid);
+  if (browser)
+    return res.redirect(rett);
+  else
+    return res.send(rett);
 })
 
 export function start() {

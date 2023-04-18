@@ -9,44 +9,49 @@
   <p id="msg">Wait feishu authenticating your identity...</p>
 
   <style>
-  #msg {
-    margin: 32px;
-    font-size: 1.5em;
-    text-align: center;
-    
-  }
+    #msg {
+      margin: 32px;
+      font-size: 1.5em;
+      text-align: center;
+
+    }
   </style>
 
   <script type="text/javascript" src="https://lf1-cdn-tos.bytegoofy.com/goofy/lark/op/h5-js-sdk-1.5.16.js">
   </script>
   <script>
     const appid = "<%- appId %>";
+    const s = new URLSearchParams(window.location.search);
+    let ret = s.get("ret");
+    if (ret == null) ret = "";
+    const rstr = ret ? `&ret=${encodeURIComponent(ret)}` : '';
+    const baseUrl = '<%- base %>';
+    const uri = encodeURIComponent(baseUrl + "/callback");
 
     if (!window.h5sdk) {
-      msg.innerText = "Open the app in Feishu client."
-    }
-
-    // 通过 ready 接口确认环境准备就绪后才能调用 API
-    window.h5sdk.ready(() => {
-      console.log("window.h5sdk.ready");
-      tt.requestAuthCode({
-        appId: appid,
-        success(res) {
-          const s = new URLSearchParams(window.location.search);
-          const ret = s.get("ret");
-          const rstr = ret ? `&ret=${encodeURIComponent(ret)}` : '';
-          fetch(`/callback?code=${res.code}${rstr}`).then(response2 => response2.text().then(res2 => {
-            window.location.replace(res2);
+      const luri = `https://open.feishu.cn/open-apis/authen/v1/index?redirect_uri=${uri}&app_id=${appid}&state=${encodeURIComponent(ret)}`;
+      window.location.replace(luri);
+    } else {
+      // 通过 ready 接口确认环境准备就绪后才能调用 API
+      window.h5sdk.ready(() => {
+        console.log("window.h5sdk.ready");
+        tt.requestAuthCode({
+          appId: appid,
+          success(res) {
+            const callbackUri = `/callback?code=${res.code}${rstr}`;
+            fetch(callbackUri).then(response2 => response2.text().then(res2 => {
+              window.location.replace(res2);
+            }
+            )
+            ).catch(function (e) { console.error(e) })
+          },
+          // 获取失败后的回调
+          fail(err) {
+            console.log(`getAuthCode failed, err:`, JSON.stringify(err));
           }
-          )
-          ).catch(function (e) {console.error(e)})
-        },
-        // 获取失败后的回调
-        fail(err) {
-          console.log(`getAuthCode failed, err:`, JSON.stringify(err));
-        }
-      })
-    });
+        })
+      });
+    }
   </script>
 
 </body>
