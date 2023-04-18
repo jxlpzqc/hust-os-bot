@@ -18,6 +18,7 @@
   },
   "scripts": {
     "start": "npm run build && node ./dist/main.js",
+    "production": "node ./dist/main.js",
     "clear": "npm run build && node ./dist/main.js clear",
     "build": "tsc && tsc-alias"
   }

@@ -102,7 +102,7 @@ export async function sync(msgs: MessageItem[]) {
       if (!messageid) continue;
       const msgIndex = msgs.findIndex(u => u.headers["message-id"][0] == messageid);
       if (msgIndex == -1) {
-        completeTask(task);
+        await completeTask(task);
       }
       else {
         isInTask[msgIndex] = true;
@@ -111,7 +111,7 @@ export async function sync(msgs: MessageItem[]) {
 
     for (let i = 0; i < msgs.length; i++) {
       const msg = msgs[i];
-      if (!isInTask[i]) createTask(msg);
+      if (!isInTask[i]) await createTask(msg);
     }
   }
   catch (err: any) {

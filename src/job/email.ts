@@ -29,13 +29,13 @@ function getAllEmails(username: string, password: string): Promise<MessageItem[]
           var f = imap.seq.fetch(`1:${total}`, {
             bodies: 'HEADER.FIELDS (FROM TO SUBJECT DATE MESSAGE-ID IN-REPLY-TO CC)',
           });
-          f.on('message', function(msg, seqno) {
-            msg.on('body', function(stream, _) {
+          f.on('message', function (msg, seqno) {
+            msg.on('body', function (stream, _) {
               var buffer = '';
-              stream.on('data', function(chunk) {
+              stream.on('data', function (chunk) {
                 buffer += chunk.toString('utf8');
               });
-              stream.on('end', function() {
+              stream.on('end', function () {
                 list.push({
                   seqno,
                   headers: Imap.parseHeader(buffer)
@@ -43,11 +43,11 @@ function getAllEmails(username: string, password: string): Promise<MessageItem[]
               });
             });
           });
-          f.once('error', function(err) {
+          f.once('error', function (err) {
             logError('Fetch error: ' + err);
             reject(err);
           });
-          f.once('end', function() {
+          f.once('end', function () {
             log(`Done fetching all messages! ${total} messages fetched.`);
             imap.end();
             resolve(list);
@@ -102,18 +102,22 @@ function getEmailAddress(str: string): string {
   return str;
 }
 
-function filterSamePersonEmails(items: MessageItem[]): MessageItem[] {
-  const map = new Map<string, MessageItem>();
-  for (const item of items) {
-    if (item.headers["from"]) {
-      map.set(getEmailAddress(item.headers["from"][0]), item);
+function filterRecentEmails(items: MessageItem[]): MessageItem[] {
+  return items.filter(u => {
+    if (u.headers["date"] && u.headers["date"][0]) {
+      const d = new Date(u.headers["date"][0]);
+      d.setDate(d.getDate() + 7);
+      if (d > new Date()) {
+        return true;
+      }
     }
-  }
-  return Array.from(map).map(u => u[1]);
+    return false;
+  });
 }
 
 function filterInterstingEmails(msgs: MessageItem[], reviewerEmails: string[]): MessageItem[] {
-  const ret: MessageItem[] = [];
+  const ret = new Map<string, MessageItem>();
+
   const { parent, isLast } = getThreadInfo(msgs);
   const getRoot = (ind: number) => {
     const MAX_STACK = 200;
@@ -125,26 +129,44 @@ function filterInterstingEmails(msgs: MessageItem[], reviewerEmails: string[]): 
     }
     return msgs[root];
   };
+
+  const isInInternalList = (ccStr: string) => {
+    const ccs = ccStr.split(',');
+    return ccs.findIndex(u => getEmailAddress(u) == CC_EMAIL) != -1;
+  }
+
+  const isInKernel = (ccStr: string) => {
+    const ccs = ccStr.split(',');
+    return ccs.findIndex(u => getEmailAddress(u).indexOf("kernel.org") != -1) != -1;
+  }
+
   for (let i = 0; i < msgs.length; i++) {
     const msg = msgs[i];
     if (!isLast[i]) continue;
-    const root = getRoot(i);
 
     const isFromWeb = getEmailAddress(msg.headers["from"][0]) == CC_EMAIL;
     if (isFromWeb) continue;
 
-    const isInternal = getEmailAddress(root.headers["to"][0]) == CC_EMAIL ||
-      (root.headers["cc"] && root.headers["cc"].length == 2
-        && getEmailAddress(root.headers["cc"][0]) == CC_EMAIL);
+    const isInternal = (msg.headers["to"] && msg.headers["to"][0]
+      && isInInternalList(msg.headers["to"][0])) ||
+      (msg.headers["cc"] && msg.headers["cc"][0]
+        && isInInternalList(msg.headers["cc"][0])
+        && !isInKernel(msg.headers["cc"][0]));
 
     const isUnreply = !reviewerEmails.find(u => getEmailAddress(msg.headers["from"][0]) == u);
 
+    const from = getRoot(i).headers["from"][0];
+
     if (isInternal && isUnreply) {
-      ret.push(msg);
+      ret.set(from, msg);
+    }
+    else if (!isUnreply) {
+      ret.delete(from);
     }
   }
 
-  return filterSamePersonEmails(ret);
+  const retu = Array.from(ret).map(u => u[1]).sort((a, b) => a.seqno - b.seqno);
+  return filterRecentEmails(retu);
 }
 
 /** Get Intersted Emails, i.e. from os kernel groups and
