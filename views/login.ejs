@@ -2,21 +2,29 @@
 
 <head>
   <title>Authenticating...</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0,maximum-scale=1.0, user-scalable=no" />
 </head>
 
 <body>
-  <p>Wait feishu authenticating your identity...</p>
+  <p id="msg">Wait feishu authenticating your identity...</p>
 
-  <script src="https://unpkg.com/vconsole@latest/dist/vconsole.min.js"></script>
-  <script>
-    // VConsole 默认会挂载到 `window.VConsole` 上
-    var vConsole = new window.VConsole();
-  </script>
+  <style>
+  #msg {
+    margin: 32px;
+    font-size: 1.5em;
+    text-align: center;
+    
+  }
+  </style>
 
   <script type="text/javascript" src="https://lf1-cdn-tos.bytegoofy.com/goofy/lark/op/h5-js-sdk-1.5.16.js">
   </script>
   <script>
     const appid = "<%- appId %>";
+
+    if (!window.h5sdk) {
+      msg.innerText = "Open the app in Feishu client."
+    }
 
     // 通过 ready 接口确认环境准备就绪后才能调用 API
     window.h5sdk.ready(() => {
@@ -26,7 +34,7 @@
         success(res) {
           console.log("getAuthCode succeed");
           fetch(`/callback?code=${res.code}`).then(response2 => response2.text().then(res2 => {
-            window.location = res2;
+            window.location.replace(res2);
           }
           )
           ).catch(function (e) {console.error(e)})

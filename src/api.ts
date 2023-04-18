@@ -57,6 +57,15 @@ export async function getTasks() {
   return ret;
 }
 
+export async function deleteTask(tid: string) {
+  const client = await getClient();
+  await client.task.task.delete({
+    path: {
+      task_id: tid
+    }
+  })
+}
+
 export type CreateTaskArg = NonNullable<Parameters<typeof client.task.task.create>[0]>['data'];
 
 export async function createTask(data: CreateTaskArg) {

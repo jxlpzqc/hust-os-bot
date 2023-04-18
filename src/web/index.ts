@@ -12,6 +12,8 @@ app.use(morgan("combined"));
 type TaskInView = {
   summary?: string;
   appLink?: string;
+  complete?: boolean;
+  extra?: any;
 }
 
 const genKey = async (text: string) => {
@@ -26,9 +28,26 @@ app.get('/index', async (req, res) => {
   if ((await genKey(oid as string)) != key) return res.send("DO NOT try to hack it.");
 
   const tasks = await getTasks();
+
+  const extractExtra = (str: string | undefined) => {
+    if (!str) return {};
+    try {
+      const raw = Buffer.from(str, "base64").toString('utf8');
+      console.log(JSON.parse(raw));
+      return JSON.parse(raw);
+    }
+    catch {
+      return {};
+    }
+  }
+
+  console.log(tasks)
+
   const items: TaskInView[] = tasks.map(u => ({
     summary: u.summary,
-    appLink: `https://applink.feishu.cn/client/todo/detail?guid=${u.id}`
+    appLink: `https://applink.feishu.cn/client/todo/detail?guid=${u.id}`,
+    extra: extractExtra(u.extra),
+    complete: u.complete_time != "0"
   }));
   return res.render("index.ejs", {
     items

@@ -66,6 +66,7 @@ function getThreadInfo(msgs: MessageItem[]): {
 } {
   const isFirst = (msg: MessageItem) => !msg.headers["in-reply-to"];
   const mid = (msg: MessageItem) => msg.headers?.["message-id"]?.[0];
+  const pid = (msg: MessageItem) => msg.headers?.["in-reply-to"]?.[0] || "";
 
   const parent = new Array<number>(msgs.length);
   const isLast = new Array<boolean>(msgs.length).fill(true);
@@ -82,7 +83,7 @@ function getThreadInfo(msgs: MessageItem[]): {
       parent[i] = -1;
     }
     else {
-      parent[i] = hash.get(mid(msg)) || -1;
+      parent[i] = hash.get(pid(msg)) || -1;
       if (parent[i] != -1) isLast[parent[i]] = false;
     }
   }
@@ -91,6 +92,24 @@ function getThreadInfo(msgs: MessageItem[]): {
     parent,
     isLast
   };
+}
+
+function getEmailAddress(str: string): string {
+  const reg = /^.+<(.+?)>$/;
+  if (reg.test(str)) {
+    return reg.exec(str)?.[1] || str;
+  }
+  return str;
+}
+
+function filterSamePersonEmails(items: MessageItem[]): MessageItem[] {
+  const map = new Map<string, MessageItem>();
+  for (const item of items) {
+    if (item.headers["from"]) {
+      map.set(getEmailAddress(item.headers["from"][0]), item);
+    }
+  }
+  return Array.from(map).map(u => u[1]);
 }
 
 function filterInterstingEmails(msgs: MessageItem[], reviewerEmails: string[]): MessageItem[] {
@@ -111,17 +130,21 @@ function filterInterstingEmails(msgs: MessageItem[], reviewerEmails: string[]): 
     if (!isLast[i]) continue;
     const root = getRoot(i);
 
-    const isInternal = root.headers["to"][0] == CC_EMAIL ||
-      (root.headers["cc"] && root.headers["cc"].length == 2
-        && root.headers["cc"][0] == CC_EMAIL);
+    const isFromWeb = getEmailAddress(msg.headers["from"][0]) == CC_EMAIL;
+    if (isFromWeb) continue;
 
-    const isUnreply = !reviewerEmails.includes(msg.headers["from"][0]);
+    const isInternal = getEmailAddress(root.headers["to"][0]) == CC_EMAIL ||
+      (root.headers["cc"] && root.headers["cc"].length == 2
+        && getEmailAddress(root.headers["cc"][0]) == CC_EMAIL);
+
+    const isUnreply = !reviewerEmails.find(u => getEmailAddress(msg.headers["from"][0]) == u);
 
     if (isInternal && isUnreply) {
       ret.push(msg);
     }
   }
-  return ret;
+
+  return filterSamePersonEmails(ret);
 }
 
 /** Get Intersted Emails, i.e. from os kernel groups and

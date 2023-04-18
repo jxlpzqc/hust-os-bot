@@ -2,15 +2,22 @@ import { MessageItem } from './email'
 import { logError } from '../log';
 import { createTask as apiCreateTask, completeTask, getGroupMember, getTasks, updateTaskCollaborator, type Task } from '../api'
 
-type Extra = {
+export type Extra = {
   type: 'os-mail',
-  mid: string
+  mid: string,
+  [index: string]: string
 }
 
 function genExtra(msg: MessageItem): string {
+  const u: any = {};
+  if (msg.headers)
+    for (const key in msg.headers) {
+      u[key] = msg.headers[key].join(", ") || "";
+    }
   const d = {
     type: 'os-mail',
-    mid: msg.headers["message-id"][0]
+    mid: msg.headers["message-id"][0],
+    ...u
   }
   const dstr = JSON.stringify(d);
   return Buffer.from(dstr, 'utf8').toString("base64");

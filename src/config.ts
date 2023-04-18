@@ -7,7 +7,7 @@ type Secrets = {
   appId: string;
   appSecret: string;
   internalGroupName: string;
-  allGroupName: string;
+  // allGroupName: string;
   reviewerEmails: string[];
 
 }

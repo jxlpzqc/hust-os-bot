@@ -15,19 +15,24 @@
             <%= u.summary %>
           </div>
           <hr />
-          <% if(!!u.messageid) { %>
+          <% if(!!u.extra.from) { %>
           <div>
-            Message-ID: <%= u.messageid %>
+            <b>From:</b> <%= u.extra.from %>
           </div>
           <% } %>
-          <% if(!!u.from) { %>
+          <% if(!!u.extra.cc) { %>
           <div>
-            From: <%= u.from %>
+            <b>Cc:</b> <%= u.extra.cc %>
+          </div>
+          <% } %>
+          <% if(!!u.extra.to) { %>
+          <div>
+            <b>To:</b> <%= u.extra.to %>
           </div>
           <% } %>
           <% if(!!u.complete) { %>
           <div>
-            Finished automatically at <%= u.timeStr %>.
+            Finished automatically at <%= u.extra.timeStr %>.
           </div>
           <% } %>
           <div class="lint">
@@ -78,6 +83,11 @@
     .finished .head::before {
       content: "[COMPLETED]";
       color: #a90f0f;
+    }
+
+    .hyper div{
+      line-break: anywhere;
+      -webkit-line-break: anywhere;
     }
 
     h1 {
