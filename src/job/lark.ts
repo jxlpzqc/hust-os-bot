@@ -95,7 +95,6 @@ async function ensureCollaborators(tasks: Task[]) {
 export async function sync(msgs: MessageItem[]) {
   try {
     const tasks = await getTasks();
-    console.log(tasks)
     await ensureCollaborators(tasks);
     const isInTask = new Array<boolean>(msgs.length).fill(false);
     for (const task of tasks) {

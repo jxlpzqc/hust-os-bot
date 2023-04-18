@@ -44,7 +44,7 @@ export async function getAuth(code: string): Promise<string | false> {
 type InnerPromise<T> = T extends Promise<infer R> ? R : any;
 export type Task = InnerPromise<ReturnType<typeof getTasks>>[number];
 
-export async function completeTask(t: Task | string, manually = false) {
+export async function completeTask(t: Task | string, manually = false, name: string = "Bot") {
   let id;
   if (typeof (t) == "string") id = t;
   else if (!t.id) return;
@@ -63,12 +63,12 @@ export async function completeTask(t: Task | string, manually = false) {
       task_id: id,
     },
     data: {
-      content: (manually ? "Manually" : "Automatically") + " completed at " + getTimeStr()
+      content: (manually ? "Manually" : "Automatically") + " completed at " + getTimeStr() + " by " + name
     }
   });
 }
 
-export async function uncompleteTask(t: Task | string, manually = false) {
+export async function uncompleteTask(t: Task | string, manually = false, name = "Bot") {
   let id;
   if (typeof (t) == "string") id = t;
   else if (!t.id) return;
@@ -87,7 +87,7 @@ export async function uncompleteTask(t: Task | string, manually = false) {
       task_id: id,
     },
     data: {
-      content: (manually ? "Manually" : "Automatically") + " uncompleted at " + getTimeStr()
+      content: (manually ? "Manually" : "Automatically") + " uncompleted at " + getTimeStr() + " by " + name
     }
   });
 }

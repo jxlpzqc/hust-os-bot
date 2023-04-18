@@ -14,7 +14,6 @@
           <div class="head">
             <%= u.summary %>
           </div>
-          <hr />
           <% if(!!u.extra.from) { %>
           <div>
             <b>From:</b> <%= u.extra.from %>
@@ -28,6 +27,11 @@
           <% if(!!u.extra.to) { %>
           <div>
             <b>To:</b> <%= u.extra.to %>
+          </div>
+          <% } %>
+          <% if(!!u.extra.date) { %>
+          <div>
+            <b>Date:</b> <%= u.extra.date %>
           </div>
           <% } %>
           <% if(!!u.complete) { %>
@@ -74,6 +78,9 @@
 
     .head {
       font-weight: bold;
+      padding-bottom: 8px;
+      margin-bottom: 8px;
+      border-bottom: solid 1px black;
     }
 
     .finished .head {
@@ -83,6 +90,10 @@
     .finished .head::before {
       content: "[COMPLETED]";
       color: #a90f0f;
+    }
+
+    .finished {
+      background: #cecece;
     }
 
     .hyper div{

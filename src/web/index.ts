@@ -2,7 +2,7 @@ import express from 'express'
 import morgan from 'morgan'
 import { createHash } from 'crypto'
 import { getSecrets } from '@/config'
-import { completeTask, getAuth, getTask, getTasks, uncompleteTask } from '@/api'
+import { completeTask, getAuth, getGroupMember, getTask, getTasks, uncompleteTask } from '@/api'
 import { log } from '@/log'
 
 const app = express();
@@ -26,6 +26,10 @@ app.get('/index', async (req, res) => {
   const key = req.query.key;
   if (!oid || !key) return res.send("Invaid parameters");
   if ((await genKey(oid as string)) != key) return res.send("DO NOT try to hack it.");
+  const { internalGroupName } = await getSecrets();
+  const members = await getGroupMember(internalGroupName);
+
+  if (!members.find(u => u.member_id == oid)) return res.send("No permission.");
 
   const tasks = await getTasks();
 
@@ -33,7 +37,6 @@ app.get('/index', async (req, res) => {
     if (!str) return {};
     try {
       const raw = Buffer.from(str, "base64").toString('utf8');
-      console.log(JSON.parse(raw));
       return JSON.parse(raw);
     }
     catch {
@@ -41,14 +44,28 @@ app.get('/index', async (req, res) => {
     }
   }
 
-  console.log(tasks)
-
   const items: TaskInView[] = tasks.map(u => ({
     summary: u.summary,
     appLink: `https://applink.feishu.cn/client/todo/detail?guid=${u.id}`,
     extra: extractExtra(u.extra),
     complete: u.complete_time != "0"
   }));
+
+  items.sort((a, b) => {
+    const acom = a.complete ? 1 : 0;
+    const bcom = b.complete ? 1 : 0;
+    if (acom != bcom) return acom - bcom;
+
+    try {
+      const ad = new Date(a.extra.date);
+      const bd = new Date(b.extra.date);
+      return - (ad.getTime() - bd.getTime()); // negative it to order by desc
+    }
+    catch { }
+
+    return 0;
+  })
+
   return res.render("index.ejs", {
     items
   })
@@ -78,12 +95,15 @@ app.get("/complete/:id", async (req, res) => {
     });
   }
 
+  const members = await getGroupMember();
+  const name = members.find(u=>u.member_id == oid)?.name || "N/A";
+  
 
   if (status == 'y') {
-    await completeTask(id, true);
+    await completeTask(id, true, name);
   }
   else {
-    await uncompleteTask(id, true);
+    await uncompleteTask(id, true, name);
   }
 
   return res.render("complete.ejs");
