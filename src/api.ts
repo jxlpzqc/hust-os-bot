@@ -1,5 +1,6 @@
 import { AppType, Client, Domain } from '@larksuiteoapi/node-sdk'
 import { getSecrets } from './config';
+import { getTimeStr } from './log';
 
 let client: Client;
 
@@ -17,6 +18,16 @@ async function getClient() {
   return client;
 }
 
+export async function getTask(id: string): Promise<Task | undefined> {
+  const client = await getClient();
+  const d = await client.task.task.get({
+    path: { task_id: id }
+  })
+
+  return d.data?.task;
+}
+
+
 export async function getAuth(code: string): Promise<string | false> {
   const client = await getClient();
   const ret = await client.authen.accessToken.create({
@@ -33,15 +44,67 @@ export async function getAuth(code: string): Promise<string | false> {
 type InnerPromise<T> = T extends Promise<infer R> ? R : any;
 export type Task = InnerPromise<ReturnType<typeof getTasks>>[number];
 
-export async function completeTask(t: Task) {
-  if (!t.id) return;
+export async function completeTask(t: Task | string, manually = false) {
+  let id;
+  if (typeof (t) == "string") id = t;
+  else if (!t.id) return;
+  else id = t.id;
+
   const client = await getClient();
   const ret = await client.task.task.complete({
     path: {
-      task_id: t.id
+      task_id: id
     }
   })
   if (ret.code != 0) throw new Error(ret.msg);
+
+  await client.task.taskComment.create({
+    path: {
+      task_id: id,
+    },
+    data: {
+      content: (manually ? "Manually" : "Automatically") + " completed at " + getTimeStr()
+    }
+  });
+}
+
+export async function uncompleteTask(t: Task | string, manually = false) {
+  let id;
+  if (typeof (t) == "string") id = t;
+  else if (!t.id) return;
+  else id = t.id;
+
+  const client = await getClient();
+  const ret = await client.task.task.uncomplete({
+    path: {
+      task_id: id
+    }
+  })
+  if (ret.code != 0) throw new Error(ret.msg);
+
+  await client.task.taskComment.create({
+    path: {
+      task_id: id,
+    },
+    data: {
+      content: (manually ? "Manually" : "Automatically") + " uncompleted at " + getTimeStr()
+    }
+  });
+}
+
+export async function addTaskCustom(tid: string, custom: string) {
+  const client = await getClient();
+  client.task.task.patch({
+    path: {
+      task_id: tid
+    },
+    data: {
+      task: {
+        custom
+      },
+      update_fields: ["custom"]
+    },
+  })
 }
 
 export async function getTasks() {
@@ -75,6 +138,7 @@ export async function createTask(data: CreateTaskArg) {
   })
 
   if (ret.code != 0) throw new Error(ret.msg);
+  return ret.data?.task;
 }
 
 export type Member = InnerPromise<ReturnType<typeof getGroupMember>>[number];

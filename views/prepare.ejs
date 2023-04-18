@@ -1,0 +1,61 @@
+<html>
+
+<head>
+  <title>Confirm</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0,maximum-scale=1.0, user-scalable=no" />
+</head>
+
+<body>
+  <% if (!complete) { %>
+  <p id="msg">The message remains unreply, do you want to manully complete it? </p>
+  <% } else { %>
+  <p id="msg">Or do you want to set uncomplete? </p>
+  <% } %>
+  <button onclick="ok()">Yes</button>
+  <button onclick="no()">No</button>
+
+  <script type="text/javascript" src="https://lf1-cdn-tos.bytegoofy.com/goofy/lark/op/h5-js-sdk-1.5.16.js"></script>
+  <script>
+  function ok(){
+    window.location.replace(window.location + 
+    <% if(!complete) { %>
+    "&y=y"
+    <% } else { %>
+    "&y=n"
+    <% } %>
+    );
+  }
+  function no(){
+    if(window.h5sdk)
+      window.h5sdk.ready(() => { // ready方法不需要每次都调用
+        tt.closeWindow({
+            fail(res) {
+              console.log(`closeWindow fail: ${JSON.stringify(res)}`);
+            }
+        });
+      });
+  }
+
+  </script>
+
+  <style>
+  #msg {
+    margin: 32px;
+    font-size: 1.5em;
+    text-align: center;
+  }
+
+  button{
+    display: block;
+    width: 100%;
+    text-align: center;
+    box-sizing: border-box;
+    padding: 8px 0;
+    border: solid 1px;
+    margin: 16px 0;
+    
+  }
+  </style>
+</body>
+
+</html>

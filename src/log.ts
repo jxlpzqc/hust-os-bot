@@ -1,4 +1,4 @@
-function getTimeStr() {
+export function getTimeStr() {
   const dt = new Date();
   const padL = (nr: number, len = 2, chr = `0`) => `${nr}`.padStart(len, chr);
 

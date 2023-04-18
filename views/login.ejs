@@ -32,8 +32,10 @@
       tt.requestAuthCode({
         appId: appid,
         success(res) {
-          console.log("getAuthCode succeed");
-          fetch(`/callback?code=${res.code}`).then(response2 => response2.text().then(res2 => {
+          const s = new URLSearchParams(window.location.search);
+          const ret = s.get("ret");
+          const rstr = ret ? `&ret=${encodeURIComponent(ret)}` : '';
+          fetch(`/callback?code=${res.code}${rstr}`).then(response2 => response2.text().then(res2 => {
             window.location.replace(res2);
           }
           )

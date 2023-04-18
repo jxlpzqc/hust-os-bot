@@ -1,6 +1,7 @@
 import { MessageItem } from './email'
 import { logError } from '../log';
-import { createTask as apiCreateTask, completeTask, getGroupMember, getTasks, updateTaskCollaborator, type Task } from '../api'
+import { createTask as apiCreateTask, completeTask, getGroupMember, getTasks, updateTaskCollaborator, type Task, addTaskCustom } from '../api'
+import { BASE_URL } from '@/config';
 
 export type Extra = {
   type: 'os-mail',
@@ -36,15 +37,42 @@ function mid(t: Task): string | false {
   return false;
 }
 
+function genCustom(id: string) {
+  const uri = BASE_URL + "/?ret=" + encodeURIComponent("/complete/" + id);
+  return JSON.stringify({
+    "custom_complete": {
+      "android":
+      {
+        "href": uri
+      },
+      "ios":
+      {
+        "href": uri
+      },
+      "pc":
+      {
+        "href": uri
+      }
+    }
+  });
+}
+
 async function createTask(msg: MessageItem) {
-  return await apiCreateTask({
+  const task = await apiCreateTask({
     origin: {
-      platform_i18n_name: '{"zh_cn": "内核内部审核工作组", "en_us": "Kernel internal review work group"}'
+      platform_i18n_name: 'Internal review task center',
+      href: {
+        url: BASE_URL,
+        title: "Show in task center"
+      }
     },
     extra: genExtra(msg),
-    summary: `处理邮件 ${msg.headers["subject"][0]}`,
+    summary: `Please Reply "${msg.headers["subject"][0]}"`,
     collaborator_ids: (await getGroupMember()).map(u => u.member_id).filter(u => !!u) as string[]
   });
+
+  if (task && task.id)
+    await addTaskCustom(task.id, genCustom(task.id));
 }
 
 async function ensureCollaborators(tasks: Task[]) {
@@ -67,6 +95,7 @@ async function ensureCollaborators(tasks: Task[]) {
 export async function sync(msgs: MessageItem[]) {
   try {
     const tasks = await getTasks();
+    console.log(tasks)
     await ensureCollaborators(tasks);
     const isInTask = new Array<boolean>(msgs.length).fill(false);
     for (const task of tasks) {
