@@ -102,7 +102,7 @@ export async function sync(msgs: MessageItem[]) {
       if (!messageid) continue;
       const msgIndex = msgs.findIndex(u => u.headers["message-id"][0] == messageid);
       if (msgIndex == -1) {
-        if(task.complete_time=="0")
+        if (task.complete_time == "0")
           await completeTask(task);
       }
       else {
