@@ -111,10 +111,20 @@ export async function getTasks() {
   const client = await getClient();
 
   const ret = [];
-  for await (const item of await client.task.task.listWithIterator()) {
-    if (!item) throw new Error("get task failed.");
-    if (!item.items) return ret;
-    ret.push(...item.items);
+  let hasMore = true;
+  let token;
+
+  while (hasMore) {
+    const d = await client.task.task.list({
+      params: {
+        page_token: token
+      }
+    });
+    if (d.code != 0) throw new Error("Request error");
+
+    hasMore = d.data?.has_more || false;
+    token = d.data?.page_token;
+    ret.push(...d.data?.items!);
   }
 
   return ret;
@@ -158,13 +168,29 @@ export async function getGroupMember(groupName: string = "") {
   }
 
   let group;
-  for await (const groups of await client.im.chat.listWithIterator()) {
-    const item = groups?.items?.find(u => u.name == groupName);
+
+  let hasMore = true;
+  let token;
+
+  while (hasMore) {
+    const d = await client.im.chat.list({
+      params: {
+        page_token: token
+      }
+    });
+    if (d.code != 0) throw new Error("Request error");
+
+    hasMore = d.data?.has_more || false;
+    token = d.data?.page_token;
+
+    const item = d.data?.items?.find(u => u.name == groupName);
     if (item) {
       group = item;
       break;
     }
   }
+
+
   if (!group || !group.chat_id) {
     throw new Error("No such group, you should add bot in the group");
   }
@@ -172,16 +198,27 @@ export async function getGroupMember(groupName: string = "") {
 
   const ret = [];
 
-  for await (const items of await client.im.chatMembers.getWithIterator({
-    params: {
-      member_id_type: 'open_id'
-    },
-    path: {
-      chat_id: chat
-    }
-  })) {
-    if (!items?.items) throw new Error("Get group member failed.");
-    ret.push(...items?.items);
+  hasMore = true;
+  token;
+
+  while (hasMore) {
+    const d = await client.im.chatMembers.get({
+      params: {
+        page_token: token,
+        member_id_type: 'open_id'
+      },
+      path: {
+        chat_id: chat
+      }
+    });
+    if (d.code != 0) throw new Error("Request error");
+
+    hasMore = d.data?.has_more || false;
+    token = d.data?.page_token;
+
+    if (d?.data?.items)
+      ret.push(...d?.data?.items);
+
   }
 
   cachedItem[groupName] = <never[]>ret;
